@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>89 Shirt Co — Admin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0d0d0d;color:#f2ead8;font-family:system-ui,sans-serif;min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+
+/* LOGIN */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.login-box{background:#1a1a1a;border:2px solid #f5e642;padding:48px 40px;width:100%;max-width:400px;}
+.login-box h1{font-size:28px;margin-bottom:6px;color:#f5e642;}
+.login-box p{color:#888;margin-bottom:32px;font-size:14px;}
+.login-box input{width:100%;background:#0d0d0d;border:1px solid #333;color:#f2ead8;padding:14px 16px;font-size:16px;margin-bottom:16px;outline:none;}
+.login-box input:focus{border-color:#f5e642;}
+.btn-yellow{background:#f5e642;color:#0d0d0d;border:none;padding:14px 32px;font-weight:700;font-size:15px;letter-spacing:1px;cursor:pointer;width:100%;text-transform:uppercase;}
+.btn-yellow:hover{background:#ffe800;}
+.login-error{color:#e8251a;font-size:13px;margin-top:12px;display:none;}
+
+/* LAYOUT */
+#adminApp{display:none;}
+.topbar{background:#111;border-bottom:3px solid #f5e642;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
+.topbar h1{font-size:22px;color:#f5e642;letter-spacing:1px;}
+.topbar span{font-size:13px;color:#888;}
+.btn-logout{background:transparent;border:1px solid #555;color:#f2ead8;padding:8px 18px;cursor:pointer;font-size:13px;letter-spacing:1px;}
+.btn-logout:hover{border-color:#e8251a;color:#e8251a;}
+
+.container{max-width:1100px;margin:0 auto;padding:32px 24px;}
+
+/* STATS BAR */
+.stats{display:flex;gap:16px;margin-bottom:32px;flex-wrap:wrap;}
+.stat{background:#1a1a1a;border:1px solid #222;padding:20px 28px;flex:1;min-width:140px;}
+.stat-num{font-size:32px;font-weight:700;color:#f5e642;}
+.stat-label{font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.toolbar h2{font-size:18px;}
+.btn-add{background:#f5e642;color:#0d0d0d;border:none;padding:11px 24px;font-weight:700;font-size:13px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;}
+.btn-add:hover{background:#ffe800;}
+
+/* TABLE */
+.table-wrap{background:#1a1a1a;border:1px solid #222;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;padding:14px 16px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;border-bottom:1px solid #2a2a2a;white-space:nowrap;}
+td{padding:14px 16px;border-bottom:1px solid #1f1f1f;font-size:14px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#1f1f1f;}
+.prod-thumb{width:52px;height:52px;object-fit:cover;background:#111;display:block;}
+.prod-thumb-placeholder{width:52px;height:52px;background:#222;display:flex;align-items:center;justify-content:center;font-size:10px;color:#555;}
+.badge-pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.badge-new{background:#39ff14;color:#000;}
+.badge-limited{background:#9b19f5;color:#fff;}
+.badge-hot{background:#e8251a;color:#fff;}
+.badge-none{background:#333;color:#888;}
+.active-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+.dot-on{background:#39ff14;}
+.dot-off{background:#555;}
+.btn-edit{background:transparent;border:1px solid #444;color:#f2ead8;padding:6px 14px;cursor:pointer;font-size:12px;margin-right:6px;}
+.btn-edit:hover{border-color:#f5e642;color:#f5e642;}
+.btn-del{background:transparent;border:1px solid #444;color:#888;padding:6px 14px;cursor:pointer;font-size:12px;}
+.btn-del:hover{border-color:#e8251a;color:#e8251a;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:#1a1a1a;border:2px solid #2a2a2a;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;}
+.modal-header{padding:24px 28px 0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2a2a2a;padding-bottom:20px;}
+.modal-header h3{font-size:18px;}
+.btn-close{background:none;border:none;color:#888;font-size:24px;cursor:pointer;line-height:1;}
+.btn-close:hover{color:#f2ead8;}
+.modal-body{padding:28px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.form-row.full{grid-template-columns:1fr;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#888;}
+input[type=text],input[type=number],input[type=url],select,textarea{background:#0d0d0d;border:1px solid #333;color:#f2ead8;padding:12px 14px;font-size:14px;width:100%;outline:none;font-family:inherit;}
+input:focus,select:focus,textarea:focus{border-color:#f5e642;}
+textarea{resize:vertical;min-height:80px;}
+select option{background:#1a1a1a;}
+.toggle-wrap{display:flex;align-items:center;gap:12px;margin-top:4px;}
+.toggle{position:relative;width:44px;height:24px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#333;border-radius:24px;transition:.2s;}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#888;border-radius:50%;transition:.2s;}
+.toggle input:checked+.toggle-slider{background:#39ff14;}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px);background:#000;}
+.img-preview{width:100%;height:160px;object-fit:contain;background:#111;margin-top:8px;display:none;}
+.modal-footer{padding:0 28px 28px;display:flex;gap:12px;justify-content:flex-end;}
+.btn-save{background:#f5e642;color:#0d0d0d;border:none;padding:12px 32px;font-weight:700;font-size:14px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;}
+.btn-save:hover{background:#ffe800;}
+.btn-cancel{background:transparent;border:1px solid #444;color:#f2ead8;padding:12px 24px;cursor:pointer;font-size:14px;}
+.btn-cancel:hover{border-color:#888;}
+
+/* TOAST */
+.toast{position:fixed;bottom:32px;right:32px;background:#f5e642;color:#0d0d0d;padding:14px 24px;font-weight:700;font-size:14px;transform:translateY(80px);opacity:0;transition:all .25s;z-index:9999;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.error{background:#e8251a;color:#fff;}
+
+.loading{text-align:center;padding:60px;color:#555;font-size:14px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h1>89 SHIRT CO.</h1>
+    <p>Admin Panel — OKC</p>
+    <input type="password" id="pwInput" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-yellow" onclick="doLogin()">Enter</button>
+    <div class="login-error" id="loginErr">Wrong password. Try again.</div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="adminApp">
+  <div class="topbar">
+    <h1>89 SHIRT CO. — SHOP MANAGER</h1>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span>okc89shirt.com</span>
+      <button class="btn-logout" onclick="logout()">Log Out</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="stats" id="statsBar">
+      <div class="stat"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total Products</div></div>
+      <div class="stat"><div class="stat-num" id="statActive">—</div><div class="stat-label">Active / Visible</div></div>
+      <div class="stat"><div class="stat-num" id="statGraphic">—</div><div class="stat-label">Graphic</div></div>
+      <div class="stat"><div class="stat-num" id="statLimited">—</div><div class="stat-label">Limited</div></div>
+      <div class="stat"><div class="stat-num" id="statMinimal">—</div><div class="stat-label">Minimal</div></div>
+    </div>
+
+    <div class="toolbar">
+      <h2>Products</h2>
+      <button class="btn-add" onclick="openForm()">+ Add Product</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Category</th>
+            <th>Badge</th>
+            <th>Status</th>
+            <th>Order</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="productTable"><tr><td colspan="8" class="loading">Loading products...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT FORM MODAL -->
+<div class="modal-overlay" id="formModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="formTitle">Add Product</h3>
+      <button class="btn-close" onclick="closeForm()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Product Name *</label>
+          <input type="text" id="fName" placeholder="Void Runner">
+        </div>
+        <div class="form-group">
+          <label>Price ($) *</label>
+          <input type="number" id="fPrice" placeholder="38" min="1" step="0.01">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="fDesc" placeholder="Bold graphic tee with raw street energy..."></textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="fCategory">
+            <option value="graphic">Graphic</option>
+            <option value="minimal">Minimal</option>
+            <option value="limited">Limited</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Badge</label>
+          <select id="fBadge">
+            <option value="">None</option>
+            <option value="NEW">NEW</option>
+            <option value="LIMITED">LIMITED</option>
+            <option value="HOT">🔥 HOT</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Sort Order</label>
+          <input type="number" id="fOrder" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Visible on site</label>
+          <div class="toggle-wrap">
+            <label class="toggle">
+              <input type="checkbox" id="fActive" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <span style="font-size:13px;color:#888;">Show in shop</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Image URL</label>
+          <input type="url" id="fImageUrl" placeholder="https://..." oninput="previewImg()">
+          <img id="fImgPreview" class="img-preview" alt="preview">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>— or upload an image file —</label>
+          <input type="file" id="fImageFile" accept="image/*" style="background:#0d0d0d;border:1px solid #333;color:#888;padding:10px;">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeForm()">Cancel</button>
+      <button class="btn-save" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://89shirt-api.shawn-mcmillen.workers.dev';
+let token = null;
+let allProducts = [];
+
+function doLogin() {
+  const pw = document.getElementById('pwInput').value;
+  fetch(`${API}/admin/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pw })
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      token = d.token;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminApp').style.display = 'block';
+      loadProducts();
+    } else {
+      document.getElementById('loginErr').style.display = 'block';
+    }
+  }).catch(() => {
+    document.getElementById('loginErr').style.display = 'block';
+  });
+}
+
+function logout() {
+  token = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminApp').style.display = 'none';
+  document.getElementById('pwInput').value = '';
+}
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+}
+
+async function loadProducts() {
+  const res = await fetch(`${API}/admin/products`, { headers: authHeaders() });
+  allProducts = await res.json();
+  renderTable();
+  renderStats();
+}
+
+function renderStats() {
+  document.getElementById('statTotal').textContent = allProducts.length;
+  document.getElementById('statActive').textContent = allProducts.filter(p => p.active).length;
+  document.getElementById('statGraphic').textContent = allProducts.filter(p => p.category === 'graphic').length;
+  document.getElementById('statLimited').textContent = allProducts.filter(p => p.category === 'limited').length;
+  document.getElementById('statMinimal').textContent = allProducts.filter(p => p.category === 'minimal').length;
+}
+
+function renderTable() {
+  const tb = document.getElementById('productTable');
+  if (!allProducts.length) {
+    tb.innerHTML = '<tr><td colspan="8" class="loading">No products yet. Add your first one!</td></tr>';
+    return;
+  }
+  tb.innerHTML = allProducts.map(p => {
+    const badge = (p.badge || '').toUpperCase();
+    const badgeClass = { NEW: 'badge-new', LIMITED: 'badge-limited', HOT: 'badge-hot' }[badge] || 'badge-none';
+    const badgeLabel = badge || 'None';
+    const thumb = p.image_url
+      ? `<img class="prod-thumb" src="${p.image_url}" alt="${p.name}">`
+      : `<div class="prod-thumb-placeholder">NO IMG</div>`;
+    return `<tr>
+      <td>${thumb}</td>
+      <td><strong>${p.name}</strong></td>
+      <td>$${parseFloat(p.price).toFixed(2)}</td>
+      <td style="text-transform:capitalize">${p.category}</td>
+      <td><span class="badge-pill ${badgeClass}">${badgeLabel}</span></td>
+      <td><span class="active-dot ${p.active ? 'dot-on' : 'dot-off'}"></span>${p.active ? 'Visible' : 'Hidden'}</td>
+      <td>${p.sort_order}</td>
+      <td>
+        <button class="btn-edit" onclick="openForm(${p.id})">Edit</button>
+        <button class="btn-del" onclick="deleteProduct(${p.id},'${p.name.replace(/'/g,'\\\')}')">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openForm(id) {
+  document.getElementById('formModal').classList.add('open');
+  if (id) {
+    const p = allProducts.find(x => x.id == id);
+    document.getElementById('formTitle').textContent = 'Edit Product';
+    document.getElementById('fId').value = p.id;
+    document.getElementById('fName').value = p.name;
+    document.getElementById('fPrice').value = p.price;
+    document.getElementById('fDesc').value = p.description || '';
+    document.getElementById('fCategory').value = p.category;
+    document.getElementById('fBadge').value = p.badge || '';
+    document.getElementById('fOrder').value = p.sort_order;
+    document.getElementById('fActive').checked = !!p.active;
+    document.getElementById('fImageUrl').value = p.image_url || '';
+    previewImg();
+  } else {
+    document.getElementById('formTitle').textContent = 'Add Product';
+    document.getElementById('fId').value = '';
+    document.getElementById('fName').value = '';
+    document.getElementById('fPrice').value = '';
+    document.getElementById('fDesc').value = '';
+    document.getElementById('fCategory').value = 'graphic';
+    document.getElementById('fBadge').value = '';
+    document.getElementById('fOrder').value = allProducts.length;
+    document.getElementById('fActive').checked = true;
+    document.getElementById('fImageUrl').value = '';
+    document.getElementById('fImgPreview').style.display = 'none';
+  }
+}
+
+function closeForm() {
+  document.getElementById('formModal').classList.remove('open');
+  document.getElementById('fImageFile').value = '';
+}
+
+function previewImg() {
+  const url = document.getElementById('fImageUrl').value;
+  const img = document.getElementById('fImgPreview');
+  if (url) { img.src = url; img.style.display = 'block'; }
+  else { img.style.display = 'none'; }
+}
+
+async function saveProduct() {
+  const name = document.getElementById('fName').value.trim();
+  const price = parseFloat(document.getElementById('fPrice').value);
+  if (!name || isNaN(price)) { showToast('Name and price are required.', true); return; }
+
+  let imageUrl = document.getElementById('fImageUrl').value.trim();
+
+  // Handle file upload first if a file is selected
+  const fileInput = document.getElementById('fImageFile');
+  if (fileInput.files[0]) {
+    showToast('Uploading image...');
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+    try {
+      const upRes = await fetch(`${API}/admin/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: fd
+      });
+      const upData = await upRes.json();
+      if (upData.url) imageUrl = upData.url;
+    } catch(e) {
+      showToast('Image upload failed — using URL if provided.', true);
+    }
+  }
+
+  const body = {
+    name,
+    price,
+    description: document.getElementById('fDesc').value.trim(),
+    category: document.getElementById('fCategory').value,
+    tag: document.getElementById('fCategory').value,
+    badge: document.getElementById('fBadge').value,
+    image_url: imageUrl,
+    active: document.getElementById('fActive').checked ? 1 : 0,
+    sort_order: parseInt(document.getElementById('fOrder').value) || 0,
+  };
+
+  const id = document.getElementById('fId').value;
+  const url = id ? `${API}/admin/products/${id}` : `${API}/admin/products`;
+  const method = id ? 'PUT' : 'POST';
+
+  const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(body) });
+  const data = await res.json();
+  if (data.success) {
+    showToast(id ? 'Product updated!' : 'Product added!');
+    closeForm();
+    loadProducts();
+  } else {
+    showToast('Something went wrong.', true);
+  }
+}
+
+async function deleteProduct(id, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  const res = await fetch(`${API}/admin/products/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders()
+  });
+  const data = await res.json();
+  if (data.success) { showToast('Product deleted.'); loadProducts(); }
+  else showToast('Delete failed.', true);
+}
+
+let toastTimer;
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
