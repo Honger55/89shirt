@@ -548,51 +548,76 @@ function shirtSVG(label,bg,accent,tc,w,h){
   return `<svg width="${w}" height="${h}" viewBox="0 0 140 165" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="140" height="165" fill="${bg}"/><path d="M52 12 L18 36 L8 58 L34 63 L34 155 L106 155 L106 63 L132 58 L122 36 L88 12 C83 25 77 30 70 30 C63 30 57 25 52 12Z" fill="${accent}" opacity="0.92"/><text x="70" y="97" text-anchor="middle" font-family="'Black Han Sans',sans-serif" font-size="15" fill="${tc}" letter-spacing="1" opacity="0.85">${label}</text><line x1="34" y1="82" x2="106" y2="82" stroke="${tc}" stroke-width="0.8" opacity="0.2"/></svg>`;
 }
 
-const products=[
-  {id:1,name:"Void Runner",price:38,desc:"Distressed streetwear graphic. Heavy cotton. Zero apologies.",category:"graphic",badge:"new",colors:["#1a1a1a","#f2ead8","#e8251a","#1a3a1a"],bg:"#140e0e",accent:"#2d1010",tc:"#e8251a"},
-  {id:2,name:"Signal Drop",price:42,desc:"Bold typographic chaos. Limited run — blink and it's gone.",category:"limited",badge:"limited",colors:["#0a0a0a","#888","#c8b89a","#2b1a3a"],bg:"#0a0a12",accent:"#12122a",tc:"#9b19f5"},
-  {id:3,name:"No Static",price:35,desc:"Stripped back. Clean lines. Still hits harder than most.",category:"minimal",badge:null,colors:["#f2ead8","#1a1a1a","#4a4a4a"],bg:"#141414",accent:"#1f1f1f",tc:"#f2ead8"},
-  {id:4,name:"Static Noise",price:40,desc:"Chaotic distortion. No two prints identical. Pure energy.",category:"graphic",badge:"hot",colors:["#1a1a1a","#e8251a","#2b3a5c","#1a3a2d"],bg:"#080f14",accent:"#0a1f2d",tc:"#00e5ff"},
-  {id:5,name:"89 OG",price:36,desc:"The original. Signature logo. The one that started everything.",category:"minimal",badge:null,colors:["#1a1a1a","#f2ead8","#888"],bg:"#0e0e0e",accent:"#1c1c1c",tc:"#f5e642"},
-  {id:6,name:"Blacked Out",price:45,desc:"Tone-on-tone. Maximum stealth. Limited quantities.",category:"limited",badge:"limited",colors:["#0a0a0a","#1f1f1f","#2a2a2a"],bg:"#080808",accent:"#141414",tc:"#333"},
-  {id:7,name:"Tag King",price:44,desc:"Graffiti wildstyle print. OKC walls can't hold this energy.",category:"graphic",badge:"new",colors:["#e8251a","#f5e642","#00e5ff","#39ff14"],bg:"#080f08",accent:"#0f2010",tc:"#39ff14"},
-  {id:8,name:"Smoke Break",price:37,desc:"Laid back energy. Certified heat. No explanation needed.",category:"minimal",badge:null,colors:["#888","#f2ead8","#4a4a4a"],bg:"#0f0f0f",accent:"#1a1a1a",tc:"#888"},
-];
+const API = 'https://89shirt-api.shawn-mcmillen.workers.dev';
 
-const badgeMap={new:'badge-new',limited:'badge-limited',hot:'badge-hot'};
-const badgeTxt={new:'NEW',limited:'LIMITED',hot:'🔥 HOT'};
-let cart=[],currentProduct=null,selectedSize=null,selectedColor=null;
+const CATEGORY_STYLES = {
+  graphic:  {bg:'#140e0e',accent:'#2d1010',tc:'#e8251a',  colors:['#1a1a1a','#f2ead8','#e8251a']},
+  limited:  {bg:'#0a0a12',accent:'#12122a',tc:'#9b19f5',  colors:['#0a0a0a','#888','#2b1a3a']},
+  minimal:  {bg:'#0e0e0e',accent:'#1c1c1c',tc:'#f2ead8',  colors:['#f2ead8','#1a1a1a','#4a4a4a']},
+  default:  {bg:'#111',   accent:'#1a1a1a',tc:'#f5e642',  colors:['#1a1a1a','#f2ead8']},
+};
+
+function styleFor(p){return CATEGORY_STYLES[p.category]||CATEGORY_STYLES.default;}
+
+const badgeMap={NEW:'badge-new',LIMITED:'badge-limited',HOT:'badge-hot'};
+const badgeTxt={NEW:'NEW',LIMITED:'LIMITED',HOT:'🔥 HOT'};
+let products=[],cart=[],currentProduct=null,selectedSize=null,selectedColor=null;
+
+async function loadProducts(){
+  try{
+    const res=await fetch(`${API}/products`);
+    products=await res.json();
+  }catch(e){products=[];}
+  renderProducts('all');
+}
 
 function renderProducts(filter){
   const grid=document.getElementById('productsGrid');
   const list=filter==='all'?products:products.filter(p=>p.category===filter);
-  grid.innerHTML=list.map(p=>`
+  if(list.length===0){grid.innerHTML='<p style="color:var(--off-white);text-align:center;padding:40px;opacity:.5;">No products found.</p>';return;}
+  const s=styleFor;
+  grid.innerHTML=list.map(p=>{
+    const st=s(p);
+    const badge=(p.badge||'').toUpperCase();
+    const imgHTML=p.image_url
+      ?`<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">`
+      :`<div class="shirt-art">${shirtSVG(p.name.split(' ')[0].toUpperCase(),st.bg,st.accent,st.tc)}</div>`;
+    return `
     <div class="product-card" onclick="openModal(${p.id})">
-      ${p.badge?`<div class="product-badge ${badgeMap[p.badge]}">${badgeTxt[p.badge]}</div>`:''}
-      <div class="product-img-wrap"><div class="shirt-art">${shirtSVG(p.name.split(' ')[0].toUpperCase(),p.bg,p.accent,p.tc)}</div></div>
+      ${badge&&badgeMap[badge]?`<div class="product-badge ${badgeMap[badge]}">${badgeTxt[badge]}</div>`:''}
+      <div class="product-img-wrap">${imgHTML}</div>
       <div class="product-overlay"><button class="quick-add" onclick="event.stopPropagation();openModal(${p.id})">View &amp; Cop →</button></div>
       <div class="product-info">
         <div class="product-name">${p.name}</div>
         <div class="product-sub">${p.category.charAt(0).toUpperCase()+p.category.slice(1)} Tee</div>
         <div class="product-bottom">
           <div class="product-price">$${p.price}</div>
-          <div class="color-dots">${p.colors.map(c=>`<div class="color-dot" style="background:${c}"></div>`).join('')}</div>
+          <div class="color-dots">${st.colors.map(c=>`<div class="color-dot" style="background:${c}"></div>`).join('')}</div>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function filterProducts(cat,btn){document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderProducts(cat);}
 
 function openModal(id){
-  currentProduct=products.find(p=>p.id===id);selectedSize=null;selectedColor=currentProduct.colors[0];
+  currentProduct=products.find(p=>p.id==id);
+  if(!currentProduct)return;
+  const st=styleFor(currentProduct);
+  selectedSize=null;selectedColor=st.colors[0];
   document.getElementById('modalName').textContent=currentProduct.name;
   document.getElementById('modalPrice').textContent=`$${currentProduct.price}.00`;
-  document.getElementById('modalDesc').textContent=currentProduct.desc;
-  document.getElementById('modalImg').innerHTML=shirtSVG(currentProduct.name.toUpperCase(),currentProduct.bg,currentProduct.accent,currentProduct.tc,400,500);
-  document.getElementById('modalImg').style.background=currentProduct.bg;
+  document.getElementById('modalDesc').textContent=currentProduct.description||'';
+  if(currentProduct.image_url){
+    document.getElementById('modalImg').innerHTML=`<img src="${currentProduct.image_url}" alt="${currentProduct.name}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">`;
+    document.getElementById('modalImg').style.background='#111';
+  }else{
+    document.getElementById('modalImg').innerHTML=shirtSVG(currentProduct.name.toUpperCase(),st.bg,st.accent,st.tc,400,500);
+    document.getElementById('modalImg').style.background=st.bg;
+  }
   document.getElementById('modalSizes').innerHTML=SIZES.map(s=>`<button class="size-btn" onclick="selectSize('${s}',this)">${s}</button>`).join('');
-  document.getElementById('modalColors').innerHTML=currentProduct.colors.map((c,i)=>`<div class="color-swatch ${i===0?'active':''}" style="background:${c}" onclick="selectColor('${c}',this)"></div>`).join('');
+  document.getElementById('modalColors').innerHTML=st.colors.map((c,i)=>`<div class="color-swatch ${i===0?'active':''}" style="background:${c}" onclick="selectColor('${c}',this)"></div>`).join('');
   document.getElementById('productModal').classList.add('open');document.body.style.overflow='hidden';
 }
 
@@ -654,7 +679,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.12});
 document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
 
-renderProducts('all');updateCartUI();
+loadProducts();updateCartUI();
 </script>
 </body>
 </html>
