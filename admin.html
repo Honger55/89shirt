@@ -317,7 +317,7 @@ function renderTable() {
       <td>${p.sort_order}</td>
       <td>
         <button class="btn-edit" onclick="openForm(${p.id})">Edit</button>
-        <button class="btn-del" onclick="deleteProduct(${p.id},'${p.name.replace(/'/g,'\\\')}')">Delete</button>
+        <button class="btn-del" onclick="deleteProduct(${p.id})">Delete</button>
       </td>
     </tr>`;
   }).join('');
@@ -418,7 +418,9 @@ async function saveProduct() {
   }
 }
 
-async function deleteProduct(id, name) {
+async function deleteProduct(id) {
+  const p = allProducts.find(x => x.id == id);
+  const name = p ? p.name : 'this product';
   if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
   const res = await fetch(`${API}/admin/products/${id}`, {
     method: 'DELETE',
